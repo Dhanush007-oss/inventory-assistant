@@ -4,3 +4,4 @@ xgboost
 pandas
 numpy
 joblib
+firebase_admin
