@@ -105,11 +105,9 @@ st.set_page_config(
 # ----------------------------------------------------------
 # PATHS
 # ----------------------------------------------------------
-FIREBASE_KEY_PATH = Path(r"C:\Users\dhanu\OneDrive\Desktop\inventory_chatbot 2\inventory_chatbot\firebase_key.json")
-MODEL_PATH = Path(r"C:\Users\dhanu\OneDrive\Desktop\inventory_chatbot 2\inventory_chatbot\inventory_pipeline.joblib")
-DATASET_PATH = Path(
-    r"C:\Users\dhanu\OneDrive\Desktop\inventory_chatbot 2\inventory_chatbot\bike_sales_data_world_2013_2023 (1).csv"
-)
+FIREBASE_KEY_PATH = Path("./firebase_key.json")
+MODEL_PATH = Path("./inventory_pipeline.joblib")
+DATASET_PATH = Path("./bike_sales_data_world_2013_2023 (1).csv")
 
 # ----------------------------------------------------------
 # FIREBASE INITIALIZATION (SAFE ON RE-RUNS)
