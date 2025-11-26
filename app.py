@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import json
 from pathlib import Path
+import os
 
 import joblib
 
@@ -17,6 +18,11 @@ from sklearn.preprocessing import LabelEncoder
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env when running locally
+load_dotenv()
 
 # ----------------------------------------------------------
 # CUSTOM TRANSFORMERS (needed so joblib can load the pipeline)
@@ -105,18 +111,67 @@ st.set_page_config(
 # ----------------------------------------------------------
 # PATHS
 # ----------------------------------------------------------
-FIREBASE_KEY_PATH = Path("./firebase_key.json")
 MODEL_PATH = Path("./inventory_pipeline.joblib")
 DATASET_PATH = Path("./bike_sales_data_world_2013_2023 (1).csv")
 
 # ----------------------------------------------------------
 # FIREBASE INITIALIZATION (SAFE ON RE-RUNS)
+#   - Uses st.secrets["FIREBASE"] on Streamlit Cloud
+#   - Falls back to environment variables (.env) locally
 # ----------------------------------------------------------
 db = None
 
+
+def _build_firebase_credentials_from_secrets():
+    """Build Firebase credentials dict from Streamlit secrets."""
+    s = st.secrets["FIREBASE"]
+    return {
+        "type": s["TYPE"],
+        "project_id": s["PROJECT_ID"],
+        "private_key_id": s["PRIVATE_KEY_ID"],
+        "private_key": s["PRIVATE_KEY"].replace("\\n", "\n"),
+        "client_email": s["CLIENT_EMAIL"],
+        "client_id": s["CLIENT_ID"],
+        "auth_uri": s["AUTH_URI"],
+        "token_uri": s["TOKEN_URI"],
+        "auth_provider_x509_cert_url": s["AUTH_PROVIDER_X509_CERT_URL"],
+        "client_x509_cert_url": s["CLIENT_X509_CERT_URL"],
+        "universe_domain": s.get("UNIVERSE_DOMAIN", "googleapis.com"),
+    }
+
+
+def _build_firebase_credentials_from_env():
+    """Build Firebase credentials dict from environment variables (.env)."""
+    return {
+        "type": os.getenv("FIREBASE_TYPE"),
+        "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+        "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+        "private_key": (os.getenv("FIREBASE_PRIVATE_KEY") or "").replace("\\n", "\n"),
+        "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+        "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+        "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
+        "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
+        "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
+        "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
+        "universe_domain": os.getenv("FIREBASE_UNIVERSE_DOMAIN", "googleapis.com"),
+    }
+
+
+def _get_firebase_credentials():
+    """Prefer Streamlit secrets when present; otherwise use env variables."""
+    try:
+        if "FIREBASE" in st.secrets:
+            return _build_firebase_credentials_from_secrets()
+    except Exception:
+        # st.secrets may not be available locally
+        pass
+    return _build_firebase_credentials_from_env()
+
+
 if not firebase_admin._apps:
     try:
-        cred = credentials.Certificate(FIREBASE_KEY_PATH)
+        firebase_credentials = _get_firebase_credentials()
+        cred = credentials.Certificate(firebase_credentials)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
     except Exception as e:
