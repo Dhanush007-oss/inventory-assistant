@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+
+venv/
+.venv/
+
+firebase_key.json
+*.secret.json
+*.key.json
+
+.DS_Store
+Thumbs.db
+
+.idea/
+.vscode/
